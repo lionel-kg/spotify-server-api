@@ -1,13 +1,31 @@
-const express = require('express');
-const app = express();
-const port = 3000;
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
 
-// Définir une route simple
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
-});
+function convertMp4ToWav(inputPath, outputPath) {
+  // Vérifier si le fichier d'entrée existe
+  if (!fs.existsSync(inputPath)) {
+    console.error("Le fichier d'entrée n'existe pas.");
+    return;
+  }
 
-// Démarrer le serveur
-app.listen(port, () => {
-  console.log(`Le serveur écoute sur le port ${port}`);
-});
+  // Utiliser fluent-ffmpeg pour effectuer la conversion
+  ffmpeg(inputPath)
+    .audioCodec('pcm_s16le')
+    .audioChannels(1)
+    .audioFrequency(16000)
+    .format('wav')
+    .on('end', () => {
+      console.log('Conversion terminée avec succès.');
+    })
+    .on('error', err => {
+      console.error('Erreur lors de la conversion :', err);
+    })
+    .save(outputPath);
+}
+
+// Spécifiez le chemin du fichier d'entrée (MP4) et de sortie (WAV)
+const inputFilePath = './songs/mp4/Lean Wit Me.mp4';
+const outputFilePath = './songs/wav/test.wav';
+
+// Appel de la fonction de conversion
+convertMp4ToWav(inputFilePath, outputFilePath);
