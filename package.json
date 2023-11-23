@@ -19,6 +19,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "jsmediatags": "^3.9.7",
     "music-metadata": "^7.14.0",
+    "mysql2": "^3.6.5",
     "node-exiftool": "^2.3.0",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
