@@ -1,54 +1,22 @@
-const ffmpeg = require('fluent-ffmpeg');
-const fs = require('fs');
-const path = require('path');
-
-function convertMp4ToWav(songFolder) {
-  // Vérifier si le répertoire d'entrée existe
-  if (!fs.existsSync(songFolder)) {
-    console.error("Le répertoire n'existe pas.");
-    return;
-  }
-
-  // Répertoire de sortie pour les fichiers WAV
-  const outputFolder = './songs/wav';
-
-  // Assurez-vous que le répertoire de sortie existe, sinon, créez-le
-  if (!fs.existsSync(outputFolder)) {
-    fs.mkdirSync(outputFolder);
-  }
-
-  fs.readdirSync(songFolder, {withFileTypes: true}).forEach(file => {
-    const fileName = file.name;
-
-    // Vérifier si le fichier WAV existe déjà
-    const wavFileName = fileName.replace('.mp4', '.wav');
-    const outputPath = path.join(outputFolder, wavFileName);
-
-    if (fs.existsSync(outputPath)) {
-      console.log(
-        `Le fichier WAV existe déjà pour ${fileName}. La conversion est ignorée.`,
-      );
-      return;
-    }
-
-    // Utiliser fluent-ffmpeg pour effectuer la conversion
-    ffmpeg(path.join(songFolder, fileName))
-      .audioCodec('pcm_s16le')
-      .audioChannels(1)
-      .audioFrequency(16000)
-      .format('wav')
-      .on('end', () => {
-        console.log('Conversion terminée avec succès.');
-      })
-      .on('error', err => {
-        console.error('Erreur lors de la conversion :', err);
-      })
-      .save(outputPath);
+const express = require('express');
+const app = express();
+const port = 4001 || process.env.PORT;
+const cors = require('cors');
+import sequelize from './src/config/db';
+// const bodyParser = require('body-parser');
+console.log(process.env.PORT);
+app.use(cors());
+// app.use(bodyParser.urlencoded({extended: true}));
+app.use('/', require('./src/routes/audio.route'));
+// app.use(bodyParser.json());
+sequelize
+  ?.sync()
+  .then(() => {
+    console.log('Base de données synchronisée');
+    app.listen(port, () => {
+      console.log(`Le serveur écoute sur le port ${port}`);
+    });
+  })
+  .catch(error => {
+    console.error('Erreur de synchronisation de la base de données :', error);
   });
-}
-
-// Spécifiez le chemin du répertoire d'entrée (MP4)
-const songFolder = './songs/mp4';
-
-// Appel de la fonction de conversion
-convertMp4ToWav(songFolder);
