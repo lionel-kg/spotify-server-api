@@ -5,7 +5,7 @@ import Album from '../model/album.model';
 import Audio from '../model/audio.model';
 
 const environment = process.env;
-const sequelize = new Sequelize('spotify', 'postgres', 'password', {
+const sequelize = new Sequelize('spotify_db', 'jeremy_test', 'Test1234', {
   host: 'localhost',
   dialect: 'postgres',
   port: 5432,
