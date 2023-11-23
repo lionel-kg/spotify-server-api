@@ -23,22 +23,23 @@ sequelize
     console.error('Erreur de synchronisation de la base de données :', error);
   });
 
-// exemple d'utilisation redis
-// const faireQuelqueChoseAvecRedis = async () => {
-//   try {
-//     // Exemple : Stocker une valeur dans Redis
-//     await redis.set('ma_cle', 'ma_valeur');
+const exempleUtilisationRedis = async () => {
+  try {
+    // Exemple : Stocker une valeur dans Redis
+    redis.definirAvecTTLParDefaut('myKey', 'myValue');
 
-//     // Exemple : Récupérer une valeur depuis Redis
-//     const valeur = await redis.get('ma_cle');
-//     console.log('Valeur récupérée depuis Redis:', valeur);
-//   } catch (error) {
-//     console.error('Erreur Redis:', error);
-//   } finally {
-//     // Assure-toi de libérer les ressources après avoir terminé
-//     // await redis.quit();
-//   }
-// };
+    // Get the TTL for that key
+
+    // Exemple : Récupérer une valeur depuis Redis
+    const valeur = await redis.client.get('myKey');
+    console.log('Valeur récupérée depuis Redis:', valeur);
+  } catch (error) {
+    console.error('Erreur Redis:', error);
+  } finally {
+    // Assure-toi de libérer les ressources après avoir terminé
+    // await redis.quit();
+  }
+};
 
 // Appelle la fonction pour effectuer des opérations Redis
-// faireQuelqueChoseAvecRedis();
+exempleUtilisationRedis();
