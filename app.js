@@ -1,9 +1,10 @@
-require('dotenv').config();
-// require('./config/database').connect();
-const express = require('express');
+import 'dotenv/config';
+// import './config/database/connect';
+import express from 'express';
+
 const app = express();
 app.use(express.json());
 
 // Logic goes here
 
-module.exports = app;
+export default app;

@@ -1,8 +1,9 @@
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const fs = require('fs');
-const path = require('path');
-const mm = require('music-metadata');
+import ffmpeg from 'fluent-ffmpeg';
+import {path as ffmpegPath} from '@ffmpeg-installer/ffmpeg';
+import fs from 'fs';
+import path from 'path';
+import mm from 'music-metadata';
+
 // const exiftool = require('node-exiftool');
 // const exiftoolPath = 'C:/Users/lione/Documents/exiftool/exiftool';
 // const ep = new exiftool.ExiftoolProcess(exiftoolPath);

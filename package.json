@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "babel-node index.js",
+    "start": "nodemon --exec babel-node index.js",
     "test": "babel-node test",
     "prepare": "husky install"
   },
@@ -36,6 +36,7 @@
     "eslint-plugin-prettier": "^5.0.1",
     "husky": "^8.0.0",
     "lint-staged": "^15.0.2",
+    "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
     "prisma": "^5.6.0"
   },

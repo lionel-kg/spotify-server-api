@@ -1,26 +1,15 @@
-const express = require('express');
-const app = express();
-const port = 4001 || process.env.PORT;
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const Router = require('./src/routes');
-
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import Router from './src/routes';
 import redis from './src/config/redis';
-// import sequelize from './config/db';
+
+const app = express();
+const port = process.env.PORT || 4001;
 
 app.use(bodyParser.json());
 app.use(cors());
 app.use('/', Router);
-
-// sequelize
-//   ?.sync()
-//   .then(() => {
-//     console.log('Base de données synchronisée');
-
-//   })
-//   .catch(error => {
-//     console.error('Erreur de synchronisation de la base de données :', error);
-//   });
 
 app.listen(port, () => {
   console.log(`Le serveur écoute sur le port ${port}`);
