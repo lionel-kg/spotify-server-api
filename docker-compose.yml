@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  # PostgreSQL service
+  spotify-db:
+    image: postgres:latest
+    container_name: spotify_db
+    environment:
+      POSTGRES_DB: spotify_db
+      POSTGRES_USER: jeremy_test
+      POSTGRES_PASSWORD: Test1234
+    ports:
+      - "5432:5432"
+
+  spotify-redis:
+    image: redis:latest
+    container_name: spotify_redis
+    ports:
+      - "6379:6379"
+
+  # React application service
+#  spotify-api:
+#    image: spotify_api_image:latest
+#    container_name: spotify_api
+#    ports:
+#      - "3000:80"
+#    depends_on:
+#      - spotify-postgres-db
+
+#  spotify-frontend:
+#    image: spotify_front_image:latest
+#    container_name: spotify_frontend
+#    ports:
+#      - "8080:3000"
+#    depends_on:
+#      - spotify-api
+
