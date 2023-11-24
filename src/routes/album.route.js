@@ -1,38 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const Audio = require('../../models/audio.model');
+const Album = require('../../models/album.model');
 
-// Create Audio
+// Create Album
 router.post('/', async (req, res) => {
   try {
-    const audio = await Audio.create(req.body);
-    res.status(201).json(audio);
+    const album = await Album.create(req.body);
+    res.status(201).json(album);
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
   }
 });
 
-// Read Audios
+// Read Albums
 router.get('/', async (req, res) => {
   try {
-    const audios = await Audio.findAll();
-    res.status(200).json(audios);
+    const albums = await Album.findAll();
+    res.status(200).json(albums);
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
   }
 });
 
-// Update Audio
+// Update Album
 router.put('/:id', async (req, res) => {
   try {
-    const audio = await Audio.findByPk(req.params.id);
-    if (audio) {
-      await audio.update(req.body);
-      res.status(200).json(audio);
+    const album = await Album.findByPk(req.params.id);
+    if (album) {
+      await album.update(req.body);
+      res.status(200).json(album);
     } else {
-      res.status(404).json({message: 'Audio not found'});
+      res.status(404).json({message: 'Album not found'});
     }
   } catch (error) {
     console.error(error);
@@ -40,15 +40,15 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete Audio
+// Delete Album
 router.delete('/:id', async (req, res) => {
   try {
-    const audio = await Audio.findByPk(req.params.id);
-    if (audio) {
-      await audio.destroy();
+    const album = await Album.findByPk(req.params.id);
+    if (album) {
+      await album.destroy();
       res.status(204).end();
     } else {
-      res.status(404).json({message: 'Audio not found'});
+      res.status(404).json({message: 'Album not found'});
     }
   } catch (error) {
     console.error(error);

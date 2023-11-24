@@ -2,15 +2,16 @@ const express = require('express');
 const app = express();
 const port = 4001 || process.env.PORT;
 const cors = require('cors');
+const bodyParser = require('body-parser');
+const Router = require('./src/routes');
 
-import redis from './src/config/redis';
-import sequelize from './src/config/db';
-// const bodyParser = require('body-parser');
-console.log(process.env.PORT);
+import redis from './config/redis';
+import sequelize from './config/db';
+
+app.use(bodyParser.json());
 app.use(cors());
-// app.use(bodyParser.urlencoded({extended: true}));
-app.use('/', require('./src/routes/audio.route'));
-// app.use(bodyParser.json());
+app.use('/', Router);
+
 sequelize
   ?.sync()
   .then(() => {
