@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-// const Artist = require('../../models/artist.model');
-const {Artist} = require('../../models');
+const {prisma} = require('../config/db');
+
 // Create Artist
 router.post('/', async (req, res) => {
   try {
-    const artist = await Artist.create(req.body);
+    const artist = await prisma.artist.create({data: req.body});
     res.status(201).json(artist);
   } catch (error) {
     console.error(error);
@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
 // Read Artists
 router.get('/', async (req, res) => {
   try {
-    const artists = await Artist.findAll();
+    const artists = await prisma.artist.findMany();
     res.status(200).json(artists);
   } catch (error) {
     console.error(error);
@@ -27,13 +27,11 @@ router.get('/', async (req, res) => {
 // Update Artist
 router.put('/:id', async (req, res) => {
   try {
-    const artist = await Artist.findByPk(req.params.id);
-    if (artist) {
-      await artist.update(req.body);
-      res.status(200).json(artist);
-    } else {
-      res.status(404).json({message: 'Artist not found'});
-    }
+    const artist = await prisma.artist.update({
+      where: {id: parseInt(req.params.id)},
+      data: req.body,
+    });
+    res.status(200).json(artist);
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
@@ -43,13 +41,10 @@ router.put('/:id', async (req, res) => {
 // Delete Artist
 router.delete('/:id', async (req, res) => {
   try {
-    const artist = await Artist.findByPk(req.params.id);
-    if (artist) {
-      await artist.destroy();
-      res.status(204).end();
-    } else {
-      res.status(404).json({message: 'Artist not found'});
-    }
+    const artist = await prisma.artist.delete({
+      where: {id: parseInt(req.params.id)},
+    });
+    res.status(204).end();
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});

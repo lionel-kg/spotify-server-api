@@ -1,22 +1,22 @@
 {
   "development": {
-    "username": "postgres",
-    "password": "Dorian77",
-    "database": "spotify",
+    "username": "jeremy_test",
+    "password": "Test1234",
+    "database": "spotify_db",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "test": {
-    "username": "postgres",
-    "password": "Dorian77",
-    "database": "spotify",
+    "username": "jeremy_test",
+    "password": "Test1234",
+    "database": "spotify_db",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "production": {
-    "username": "postgres",
-    "password": "Dorian77",
-    "database": "spotify",
+    "username": "jeremy_test",
+    "password": "Test1234",
+    "database": "spotify_db",
     "host": "127.0.0.1",
     "dialect": "postgres"
   }

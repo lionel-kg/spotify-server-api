@@ -5,24 +5,26 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const Router = require('./src/routes');
 
-import redis from './config/redis';
-import sequelize from './config/db';
+import redis from './src/config/redis';
+// import sequelize from './config/db';
 
 app.use(bodyParser.json());
 app.use(cors());
 app.use('/', Router);
 
-sequelize
-  ?.sync()
-  .then(() => {
-    console.log('Base de données synchronisée');
-    app.listen(port, () => {
-      console.log(`Le serveur écoute sur le port ${port}`);
-    });
-  })
-  .catch(error => {
-    console.error('Erreur de synchronisation de la base de données :', error);
-  });
+// sequelize
+//   ?.sync()
+//   .then(() => {
+//     console.log('Base de données synchronisée');
+
+//   })
+//   .catch(error => {
+//     console.error('Erreur de synchronisation de la base de données :', error);
+//   });
+
+app.listen(port, () => {
+  console.log(`Le serveur écoute sur le port ${port}`);
+});
 
 const exempleUtilisationRedis = async () => {
   try {

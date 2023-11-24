@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const Album = require('../../models/album.model');
+const {prisma} = require('../config/db');
 
 // Create Album
 router.post('/', async (req, res) => {
   try {
-    const album = await Album.create(req.body);
+    const album = await prisma.album.create({data: req.body});
     res.status(201).json(album);
   } catch (error) {
     console.error(error);
@@ -16,7 +16,11 @@ router.post('/', async (req, res) => {
 // Read Albums
 router.get('/', async (req, res) => {
   try {
-    const albums = await Album.findAll();
+    const albums = await prisma.album.findMany({
+      include: {
+        artist: true,
+      },
+    });
     res.status(200).json(albums);
   } catch (error) {
     console.error(error);
@@ -27,13 +31,11 @@ router.get('/', async (req, res) => {
 // Update Album
 router.put('/:id', async (req, res) => {
   try {
-    const album = await Album.findByPk(req.params.id);
-    if (album) {
-      await album.update(req.body);
-      res.status(200).json(album);
-    } else {
-      res.status(404).json({message: 'Album not found'});
-    }
+    const album = await prisma.album.update({
+      where: {id: parseInt(req.params.id)},
+      data: req.body,
+    });
+    res.status(200).json(album);
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
@@ -43,13 +45,10 @@ router.put('/:id', async (req, res) => {
 // Delete Album
 router.delete('/:id', async (req, res) => {
   try {
-    const album = await Album.findByPk(req.params.id);
-    if (album) {
-      await album.destroy();
-      res.status(204).end();
-    } else {
-      res.status(404).json({message: 'Album not found'});
-    }
+    const album = await prisma.album.delete({
+      where: {id: parseInt(req.params.id)},
+    });
+    res.status(204).end();
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
