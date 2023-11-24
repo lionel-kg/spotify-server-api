@@ -27,6 +27,7 @@ model Audio {
   title   String
   album   Album?  @relation(fields: [albumId], references: [id])
   artist  Artist? @relation(fields: [artistId], references: [id])
+  url   String
   albumId Int?
   artistId Int?
 }

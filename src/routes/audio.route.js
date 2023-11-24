@@ -16,8 +16,30 @@ router.post('/', async (req, res) => {
 // Read Audios
 router.get('/', async (req, res) => {
   try {
-    const audios = await prisma.audio.findMany();
+    const audios = await prisma.audio.findMany({
+      include: {
+        album: true,
+        artist: true,
+      },
+    });
     res.status(200).json(audios);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: 'Internal server error'});
+  }
+});
+
+// Read Audio
+router.get('/:id', async (req, res) => {
+  try {
+    const audio = await prisma.audio.findUnique({
+      where: {id: parseInt(req.params.id)},
+      include: {
+        album: true,
+        artist: true,
+      },
+    });
+    res.status(200).json(audio);
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
@@ -30,6 +52,10 @@ router.put('/:id', async (req, res) => {
     const audio = await prisma.audio.update({
       where: {id: parseInt(req.params.id)},
       data: req.body,
+      include: {
+        album: true,
+        artist: true,
+      },
     });
     res.status(200).json(audio);
   } catch (error) {

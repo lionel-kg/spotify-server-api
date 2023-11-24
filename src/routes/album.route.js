@@ -19,9 +19,27 @@ router.get('/', async (req, res) => {
     const albums = await prisma.album.findMany({
       include: {
         artist: true,
+        audios: true,
       },
     });
     res.status(200).json(albums);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: 'Internal server error'});
+  }
+});
+
+// Read Album
+router.get('/:id', async (req, res) => {
+  try {
+    const album = await prisma.album.findUnique({
+      where: {id: parseInt(req.params.id)},
+      include: {
+        artist: true,
+        audios: true,
+      },
+    });
+    res.status(200).json(album);
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
@@ -34,6 +52,10 @@ router.put('/:id', async (req, res) => {
     const album = await prisma.album.update({
       where: {id: parseInt(req.params.id)},
       data: req.body,
+      include: {
+        artist: true,
+        audios: true,
+      },
     });
     res.status(200).json(album);
   } catch (error) {
