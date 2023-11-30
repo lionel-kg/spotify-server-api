@@ -5,8 +5,23 @@ import {prisma} from '../config/db';
 // Create Album
 router.post('/', async (req, res) => {
   try {
-    const album = await prisma.album.create({data: req.body});
-    res.status(201).json(album);
+    const {title} = req.body;
+
+    const existingAlbum = await prisma.album.findFirst({
+      where: {
+        title: title,
+      },
+    });
+
+    if (existingAlbum) {
+      res.status(200).json(existingAlbum);
+    } else {
+      const newAlbum = await prisma.album.create({
+        data: req.body,
+      });
+
+      res.status(201).json(newAlbum);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});

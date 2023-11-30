@@ -5,8 +5,21 @@ import {prisma} from '../config/db';
 // Create Artist
 router.post('/', async (req, res) => {
   try {
-    const artist = await prisma.artist.create({data: req.body});
-    res.status(201).json(artist);
+    const {name} = req.body;
+    const existingArtist = await prisma.artist.findFirst({
+      where: {
+        name: name,
+      },
+    });
+    if (existingArtist) {
+      res.status(200).json(existingArtist);
+    } else {
+      const newArtist = await prisma.artist.create({
+        data: req.body,
+      });
+
+      res.status(201).json(newArtist);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
