@@ -23,6 +23,8 @@ router.post('/', async (req, res) => {
         data: req.body,
       });
 
+      await redis.del(`/artist/`);
+
       res.status(201).json(newArtist);
     }
   } catch (error) {

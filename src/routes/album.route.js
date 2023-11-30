@@ -24,6 +24,8 @@ router.post('/', async (req, res) => {
         data: req.body,
       });
 
+      await redis.del(`/albums/`);
+
       res.status(201).json(newAlbum);
     }
   } catch (error) {

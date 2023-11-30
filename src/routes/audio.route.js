@@ -13,6 +13,8 @@ const redis = new Redis({enableAutoPipelining: true});
 router.post('/', async (req, res) => {
   try {
     const audio = await prisma.audio.create({data: req.body});
+    await redis.del(`/audio/`);
+
     res.status(201).json(audio);
   } catch (error) {
     console.error(error);
