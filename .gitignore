@@ -8,7 +8,8 @@
 package-lock.json
 # testing
 /coverage
-
+/postgres_data
+/songs
 # production
 /build
 .env

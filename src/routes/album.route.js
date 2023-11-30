@@ -14,6 +14,20 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.post('/album/:id', async (req, res) => {
+  try {
+    const album = await prisma.album.findUnique({
+      where: {id: req.params.id},
+      include: {
+        audios: true,
+      },
+    });
+    const song = await prisma.song.findUnique(req.body.song);
+    console.log(song);
+    console.log(album.audios);
+  } catch (error) {}
+});
+
 // Read Albums
 router.get('/', redisMiddleware, async (req, res) => {
   try {
