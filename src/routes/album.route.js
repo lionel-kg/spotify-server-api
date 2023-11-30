@@ -1,7 +1,10 @@
 import express from 'express';
 const router = express.Router();
 import {prisma} from '../config/db';
+
+import Redis from 'ioredis';
 import redisMiddleware from '../middleware/redis';
+const redis = new Redis({enableAutoPipelining: true});
 
 // Create Album
 router.post('/', async (req, res) => {

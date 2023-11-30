@@ -1,10 +1,13 @@
 import express from 'express';
 const router = express.Router();
 import {prisma} from '../config/db';
-import redisMiddleware from '../middleware/redis';
 import {upload} from '../services/upload.service';
 import {getWavMetadata, convertMp4ToWav} from '../services/audio.service';
 import cloudinary from '../config/cloudinary';
+
+import Redis from 'ioredis';
+import redisMiddleware from '../middleware/redis';
+const redis = new Redis({enableAutoPipelining: true});
 
 // Create Audio
 router.post('/', async (req, res) => {
