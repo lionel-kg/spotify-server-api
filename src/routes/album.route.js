@@ -95,7 +95,23 @@ router.put('/:id', async (req, res) => {
   try {
     const updatedAlbum = await prisma.album.update({
       where: {id: albumId},
-      data: req.body,
+      data: {
+        // Update album fields
+        title: req.body.title, // Add other fields as needed
+
+        // Update audios
+        audios: {
+          updateMany: req.body.audios.map(audio => ({
+            data: {
+              title: audio.title, // Add other audio fields as needed
+              // ... (other audio fields)
+            },
+            where: {
+              id: audio.id, // Specify the unique identifier for each audio
+            },
+          })),
+        },
+      },
       include: {
         artist: true,
         audios: true,
