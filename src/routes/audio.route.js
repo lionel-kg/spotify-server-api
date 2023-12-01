@@ -13,7 +13,9 @@ const redis = new Redis({enableAutoPipelining: true});
 router.post('/', async (req, res) => {
   try {
     const audio = await prisma.audio.create({data: req.body});
-    await redis.del(`/audio/`);
+    await redis.del(`/audio`);
+    await redis.del(`/album/${req.body.albumId}`);
+    await redis.del(`/artist/${req.body.artistId}`);
 
     res.status(201).json(audio);
   } catch (error) {
@@ -47,7 +49,7 @@ router.get('/:id', async (req, res) => {
     const audioId = parseInt(req.params.id);
 
     // Try to get the audio from cache
-    const cachedAudio = await redis.get(`/audios/${audioId}`);
+    const cachedAudio = await redis.get(`/audio/${audioId}`);
 
     if (cachedAudio) {
       res.status(200).json(JSON.parse(cachedAudio));
@@ -63,7 +65,7 @@ router.get('/:id', async (req, res) => {
 
       if (audio) {
         // Cache the audio for 1 hour
-        await redis.setex(`/audios/${audioId}`, 3600, JSON.stringify(audio));
+        await redis.setex(`/audio/${audioId}`, 3600, JSON.stringify(audio));
         res.status(200).json(audio);
       } else {
         res.status(404).json({message: 'Audio not found'});
@@ -90,7 +92,7 @@ router.put('/:id', async (req, res) => {
     });
 
     // Delete cache for the updated audio
-    await redis.del(`/audios/${audioId}`);
+    await redis.del(`/audio/${audioId}`);
 
     res.status(200).json(updatedAudio);
   } catch (error) {
@@ -110,7 +112,7 @@ router.delete('/:id', async (req, res) => {
     });
 
     // Delete cache for the deleted audio
-    await redis.del(`/audios/${audioId}`);
+    await redis.del(`/audio/${audioId}`);
 
     res.status(204).end();
   } catch (error) {
@@ -121,6 +123,9 @@ router.delete('/:id', async (req, res) => {
 
 // uploadHandler.js
 router.post('/upload', upload.single('file'), async (req, res) => {
+  const audioFile = req.file;
+  console.log("request :", req);
+  console.log("request file :", )
   try {
     const audioFile = req.file;
     let metaData = null;

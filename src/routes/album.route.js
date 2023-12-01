@@ -24,7 +24,8 @@ router.post('/', async (req, res) => {
         data: req.body,
       });
 
-      await redis.del(`/albums/`);
+      await redis.del(`/album`);
+      await redis.del(`/artist/${req.body.artistId}`);
 
       res.status(201).json(newAlbum);
     }
@@ -32,20 +33,6 @@ router.post('/', async (req, res) => {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
   }
-});
-
-router.post('/album/:id', async (req, res) => {
-  try {
-    const album = await prisma.album.findUnique({
-      where: {id: req.params.id},
-      include: {
-        audios: true,
-      },
-    });
-    const song = await prisma.song.findUnique(req.body.song);
-    console.log(song);
-    console.log(album.audios);
-  } catch (error) {}
 });
 
 // Read Albums
@@ -73,7 +60,7 @@ router.get('/:id', async (req, res) => {
     const albumId = parseInt(req.params.id);
 
     // Try to get the album from cache
-    const cachedAlbum = await redis.get(`/albums/${albumId}`);
+    const cachedAlbum = await redis.get(`/album/${albumId}`);
 
     if (cachedAlbum) {
       res.status(200).json(JSON.parse(cachedAlbum));
@@ -89,7 +76,7 @@ router.get('/:id', async (req, res) => {
 
       if (album) {
         // Cache the album for 1 hour
-        await redis.setex(`/albums/${albumId}`, 3600, JSON.stringify(album));
+        await redis.setex(`/album/${albumId}`, 3600, JSON.stringify(album));
         res.status(200).json(album);
       } else {
         res.status(404).json({message: 'Album not found'});
@@ -116,7 +103,7 @@ router.put('/:id', async (req, res) => {
     });
 
     // Delete cache for the updated album
-    await redis.del(`/albums/${albumId}`);
+    await redis.del(`/album/${albumId}`);
 
     res.status(200).json(updatedAlbum);
   } catch (error) {
@@ -136,7 +123,7 @@ router.delete('/:id', async (req, res) => {
     });
 
     // Delete cache for the deleted album
-    await redis.del(`/albums/${albumId}`);
+    await redis.del(`/album/${albumId}`);
 
     res.status(204).end();
   } catch (error) {

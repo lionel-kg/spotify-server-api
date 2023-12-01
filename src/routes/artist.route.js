@@ -23,7 +23,7 @@ router.post('/', async (req, res) => {
         data: req.body,
       });
 
-      await redis.del(`/artist/`);
+      await redis.del(`/artist`);
 
       res.status(201).json(newArtist);
     }
@@ -58,7 +58,7 @@ router.get('/:id', async (req, res) => {
     const artistId = parseInt(req.params.id);
 
     // Try to get the artist from cache
-    const cachedArtist = await redis.get(`/artists/${artistId}`);
+    const cachedArtist = await redis.get(`/artist/${artistId}`);
 
     if (cachedArtist) {
       res.status(200).json(JSON.parse(cachedArtist));
@@ -74,7 +74,7 @@ router.get('/:id', async (req, res) => {
 
       if (artist) {
         // Cache the artist for 1 hour
-        await redis.setex(`/artists/${artistId}`, 3600, JSON.stringify(artist));
+        await redis.setex(`/artist/${artistId}`, 3600, JSON.stringify(artist));
         res.status(200).json(artist);
       } else {
         res.status(404).json({message: 'Artist not found'});
