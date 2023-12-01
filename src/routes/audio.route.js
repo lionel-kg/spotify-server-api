@@ -123,13 +123,11 @@ router.delete('/:id', async (req, res) => {
 
 // uploadHandler.js
 router.post('/upload', upload.single('file'), async (req, res) => {
-  const audioFile = req.file;
-  console.log("request :", req);
-  console.log("request file :", )
   try {
     const audioFile = req.file;
     let metaData = null;
     let imageCloudinaryUpload = null;
+
     if (
       audioFile.mimetype === 'audio/mpeg' ||
       audioFile.mimetype === 'video/mp4'
@@ -151,26 +149,50 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       },
     );
 
-    // if (metaData.common.picture !== undefined) {
-    //   imageCloudinaryUpload = await cloudinary.uploader.upload_stream(
-    //     uploadStream => {
-    //       metaData.common.picture[0].data.pipe(uploadStream);
-    //     },
-    //     {
-    //       resource_type: 'image',
-    //       folder: 'image', // Facultatif : Définissez le dossier Cloudinary
-    //     },
-    //   );
-    //   // Faire quelque chose avec le résultat de l'upload de l'image (si nécessaire)
-    // }
-
-    // Faire quelque chose avec le résultat de l'upload de l'audio (par exemple, enregistrez le chemin du fichier dans la base de données)
-    res.status(200).json({
-      audio: audioCloudinaryUpload,
-      image: imageCloudinaryUpload, // Ajout du résultat de l'upload de l'image dans la réponse
-      metaData: metaData.common,
-      message: 'Fichier audio téléchargé avec succès',
+    // Create artist, album, and audio using Prisma
+    const newArtist = await prisma.artist.create({
+      data: {
+        name: metaData.common.artist,
+      },
     });
+    if (newArtist) {
+      const newAlbum = await prisma.album.create({
+        data: {
+          title: metaData.common.album,
+          artistId: newArtist.id,
+        },
+      });
+
+      if (newAlbum) {
+        const newAudio = await prisma.audio.create({
+          data: {
+            title: metaData.common.title,
+            url: audioCloudinaryUpload.url,
+            artistId: newArtist.id,
+            albumId: newAlbum.id,
+          },
+        });
+
+        if (newAudio) {
+          res.status(200).json({
+            audio: newAudio,
+            artist: newArtist,
+            album: newAlbum,
+            // image: imageCloudinaryUpload, // Ajout du résultat de l'upload de l'image dans la réponse
+            // metaData: metaData.common,
+            message: 'Fichier audio téléchargé avec succès',
+          });
+        } else {
+          res
+            .status(500)
+            .json({error: "Erreur lors de la création de l'audio"});
+        }
+      } else {
+        res.status(500).json({error: "Erreur lors de la création de l'album"});
+      }
+    } else {
+      res.status(500).json({error: "Erreur lors de la création de l'artiste"});
+    }
   } catch (error) {
     console.log(error);
     res

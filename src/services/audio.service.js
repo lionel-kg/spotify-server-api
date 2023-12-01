@@ -74,14 +74,14 @@ export async function convertMp4ToWav(fileName) {
 }
 
 // Spécifiez le chemin du répertoire d'entrée (MP4)
-// const songFolder = './songs/mp4';
+// const audioFolder = './audios/mp4';
 
-// const song = './songs/mp4/Snoop Dogg - Gin And Juice.mp3';
-// const song = 'songs/wav/m4a/9-01 Amsterdam.m4a';
+// const audio = './audios/mp4/Snoop Dogg - Gin And Juice.mp3';
+// const audio = 'audios/wav/m4a/9-01 Amsterdam.m4a';
 
-// getMp4Metadata(song);
+// getMp4Metadata(audio);
 
-// getWavMetadata(song);
+// getWavMetadata(audio);
 
 // Appel de la fonction de conversion
-// convertMp4ToWav(songFolder);
+// convertMp4ToWav(audioFolder);

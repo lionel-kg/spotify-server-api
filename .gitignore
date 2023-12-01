@@ -9,7 +9,7 @@ package-lock.json
 # testing
 /coverage
 /postgres_data
-/songs
+/Audio
 # production
 /build
 .env
