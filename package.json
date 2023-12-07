@@ -27,7 +27,8 @@
     "node-exiftool": "^2.3.0",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
-    "redis": "^4.6.11"
+    "redis": "^4.6.11",
+    "streamifier": "^0.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.23.3",

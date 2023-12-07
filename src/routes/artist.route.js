@@ -16,6 +16,7 @@ router.post('/', async (req, res) => {
         name: name,
       },
     });
+    console.log(existingArtist);
     if (existingArtist) {
       res.status(200).json(existingArtist);
     } else {
@@ -42,7 +43,6 @@ router.get('/', redisMiddleware, async (req, res) => {
         audios: true,
       },
     });
-
     await redis.setex(req.originalUrl, 3600, JSON.stringify(artists));
 
     res.status(200).json(artists);
@@ -89,7 +89,6 @@ router.get('/:id', async (req, res) => {
 // Update Artist
 router.put('/:id', async (req, res) => {
   const artistId = parseInt(req.params.id);
-
   try {
     const updatedArtist = await prisma.artist.update({
       where: {id: artistId},
@@ -99,11 +98,15 @@ router.put('/:id', async (req, res) => {
         audios: true,
       },
     });
-
+    const artists = await prisma.artist.findMany({
+      include: {
+        albums: true,
+        audios: true,
+      },
+    });
     // Delete cache for the updated artist
     await redis.del(`/artists/${artistId}`);
-
-    res.status(200).json(updatedArtist);
+    res.status(200).json(artists);
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
@@ -113,17 +116,25 @@ router.put('/:id', async (req, res) => {
 // Delete Artist
 router.delete('/:id', async (req, res) => {
   const artistId = parseInt(req.params.id);
-
   try {
-    // Delete artist from the database
-    const deletedArtist = await prisma.artist.delete({
-      where: {id: artistId},
+    // Use a Prisma transaction to ensure atomicity
+    await prisma.$transaction(async prisma => {
+      // Delete artist's albums
+      const deletedAlbums = await prisma.album.deleteMany({
+        where: {artistId},
+      });
+      // Delete artist's audio files
+      const deletedAudioFiles = await prisma.audio.deleteMany({
+        where: {artistId},
+      });
+      // Delete the artist
+      const deletedArtist = await prisma.artist.delete({
+        where: {id: artistId},
+      });
+      // Delete cache for the deleted artist
+      await redis.del(`/artists/${artistId}`);
+      res.status(204).end();
     });
-
-    // Delete cache for the deleted artist
-    await redis.del(`/artists/${artistId}`);
-
-    res.status(204).end();
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});

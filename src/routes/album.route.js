@@ -133,15 +133,34 @@ router.delete('/:id', async (req, res) => {
   const albumId = parseInt(req.params.id);
 
   try {
-    // Delete album from the database
-    const deletedAlbum = await prisma.album.delete({
-      where: {id: albumId},
+    // Use a Prisma transaction to ensure atomicity
+    await prisma.$transaction(async prisma => {
+      // Get all audio files associated with the album
+      const audioFiles = await prisma.audio.findMany({
+        where: {albumId},
+      });
+
+      // Delete each audio file
+      await Promise.all(
+        audioFiles.map(async audio => {
+          // Delete cache for the deleted audio file
+          await redis.del(`/audio/${audio.id}`);
+
+          // Delete audio file from the database
+          await prisma.audio.delete({where: {id: audio.id}});
+        }),
+      );
+
+      // Delete album from the database
+      const deletedAlbum = await prisma.album.delete({
+        where: {id: albumId},
+      });
+
+      // Delete cache for the deleted album
+      await redis.del(`/album/${albumId}`);
+
+      res.status(204).end();
     });
-
-    // Delete cache for the deleted album
-    await redis.del(`/album/${albumId}`);
-
-    res.status(204).end();
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});

@@ -20,6 +20,7 @@ model Album {
   artist Artist? @relation(fields: [artistId], references: [id])
   audios Audio[]
   artistId Int?
+  thumbnail String?
 }
 
 model Audio {
