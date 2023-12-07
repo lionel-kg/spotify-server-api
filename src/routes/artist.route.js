@@ -131,9 +131,15 @@ router.delete('/:id', async (req, res) => {
       const deletedArtist = await prisma.artist.delete({
         where: {id: artistId},
       });
+      const artists = await prisma.artist.findMany({
+        include: {
+          albums: true,
+          audios: true,
+        },
+      });
       // Delete cache for the deleted artist
       await redis.del(`/artists/${artistId}`);
-      res.status(204).end();
+      res.status(200).json(artists);
     });
   } catch (error) {
     console.error(error);
