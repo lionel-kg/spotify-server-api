@@ -25,6 +25,41 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Read Audios with Pagination
+// Read Audios with Pagination
+router.get('/pagination', redisMiddleware, async (req, res) => {
+  try {
+    // Paramètres de pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10; // Nombre d'éléments par page
+
+    // Calcul de l'offset pour la requête
+    const offset = (page - 1) * limit;
+
+    // Requête pour récupérer les éléments paginés
+    const audios = await prisma.audio.findMany({
+      include: {
+        album: true,
+        artist: true,
+      },
+      skip: offset,
+      take: limit,
+    });
+
+    // Requête pour récupérer le nombre total d'éléments sans la pagination
+    const nbResults = await prisma.audio.count();
+
+    // Enregistrez les données dans le cache Redis avec une clé unique basée sur les paramètres de pagination
+    const cacheKey = `${req.originalUrl}_page_${page}_limit_${limit}`;
+    await redis.setex(cacheKey, 3600, JSON.stringify(audios));
+
+    res.status(200).json({audios, nbResults});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({message: 'Internal server error'});
+  }
+});
+
 // Read Audios
 router.get('/', redisMiddleware, async (req, res) => {
   try {
@@ -126,9 +161,9 @@ router.delete('/:id', async (req, res) => {
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const audioFile = req.file;
+    const albumId = parseInt(req.body.albumId);
     let thumbnail = null;
     let metaData = null;
-
     if (
       audioFile.mimetype === 'audio/mpeg' ||
       audioFile.mimetype === 'video/mp4'
@@ -150,7 +185,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       },
     );
 
-    console.log(audioCloudinaryUpload);
     // Check if the artist already exists
     const existingArtist = await prisma.artist.findFirst({
       where: {name: metaData.common.artist},
@@ -166,71 +200,81 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       }));
 
     // Check if the album already exists for the artist
-    const existingAlbum = await prisma.album.findFirst({
-      where: {
-        title: metaData.common.album,
-        artistId: newArtist.id,
-      },
-    });
 
-    let newAlbum;
-
-    // If the album doesn't exist, create a new one
-    if (!existingAlbum) {
-      newAlbum = await prisma.album.create({
-        data: {
-          title: metaData.common.album,
-          artistId: newArtist.id,
-          thumbnail: null, // Initialize thumbnail to null
-        },
-      });
-
-      // Upload the image of the album and update the thumbnail field
-      const imageUploadPromise = new Promise((resolve, reject) => {
-        const imageCloudinaryUpload = cloudinary.uploader.upload_stream(
-          {folder: 'image'},
-          function (error, result) {
-            if (error) {
-              console.log(error);
-              reject(error);
-            } else {
-              resolve(result.secure_url);
-            }
-          },
-        );
-        streamifier
-          .createReadStream(metaData.common.picture[0].data)
-          .pipe(imageCloudinaryUpload);
-      });
-
-      // Wait for the image upload to complete before continuing
-      thumbnail = await imageUploadPromise;
-
-      // Update the thumbnail field in the newly created album
-      await prisma.album.update({
-        where: {id: newAlbum.id},
-        data: {thumbnail: thumbnail},
-      });
+    let where = {
+      artistId: newArtist.id,
+    };
+    if (albumId) {
+      where = {...where, id: albumId};
     } else {
-      // If the album exists, use its existing thumbnail
-      thumbnail = existingAlbum.thumbnail;
+      where = {...where, title: metaData.common.album};
     }
+    console.log(where);
+    const existingAlbum = await prisma.album.findFirst({
+      where: where,
+    });
+    console.log('existingAlbum', existingAlbum);
+    let newAlbum = existingAlbum;
 
+    if (albumId === null || albumId === undefined) {
+      console.log('TEEEEEEEEEEST', newAlbum);
+
+      // If the album doesn't exist, create a new one
+      if (!existingAlbum) {
+        newAlbum = await prisma.album.create({
+          data: {
+            title: metaData.common.album,
+            artistId: newArtist.id,
+            thumbnail: null, // Initialize thumbnail to null
+          },
+        });
+
+        // Upload the image of the album and update the thumbnail field
+        const imageUploadPromise = new Promise((resolve, reject) => {
+          const imageCloudinaryUpload = cloudinary.uploader.upload_stream(
+            {folder: 'image'},
+            function (error, result) {
+              if (error) {
+                console.log(error);
+                reject(error);
+              } else {
+                resolve(result.secure_url);
+              }
+            },
+          );
+          streamifier
+            .createReadStream(metaData.common.picture[0].data)
+            .pipe(imageCloudinaryUpload);
+        });
+
+        // Wait for the image upload to complete before continuing
+        thumbnail = await imageUploadPromise;
+
+        // Update the thumbnail field in the newly created album
+        await prisma.album.update({
+          where: {id: newAlbum.id},
+          data: {thumbnail: thumbnail},
+        });
+      } else {
+        // If the album exists, use its existing thumbnail
+        thumbnail = existingAlbum.thumbnail;
+      }
+    }
+    console.log(albumId, newAlbum);
     // Create the audio using Prisma
     const newAudio = await prisma.audio.create({
       data: {
         title: metaData.common.title,
         url: audioCloudinaryUpload.url,
         artistId: newArtist.id,
-        albumId: newAlbum ? newAlbum.id : existingAlbum.id,
+        albumId: albumId ?? newAlbum?.id,
       },
     });
 
-    console.log(newAlbum, existingAlbum);
     res.status(200).json({
       audio: newAudio,
       artist: newArtist,
-      album: newAlbum || existingAlbum,
+      album: newAlbum,
       thumbnail: thumbnail,
       message: 'Fichier audio téléchargé avec succès',
     });
