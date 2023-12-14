@@ -177,9 +177,10 @@ router.delete('/:id', async (req, res) => {
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const audioFile = req.file;
-    const albumId = parseInt(req.body.albumId);
+    const albumId = req.body.albumId ? parseInt(req.body.albumId) : null;
     let thumbnail = null;
     let metaData = null;
+
     if (
       audioFile.mimetype === 'audio/mpeg' ||
       audioFile.mimetype === 'video/mp4'
@@ -216,66 +217,59 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       }));
 
     // Check if the album already exists for the artist
-
     let where = {
       artistId: newArtist.id,
+      title: albumId ? undefined : metaData.common.album,
+      id: albumId || undefined,
     };
-    if (albumId) {
-      where = {...where, id: albumId};
-    } else {
-      where = {...where, title: metaData.common.album};
-    }
-    console.log(where);
+
     const existingAlbum = await prisma.album.findFirst({
       where: where,
     });
-    console.log('existingAlbum', existingAlbum);
+
     let newAlbum = existingAlbum;
 
-    if (albumId === null || albumId === undefined) {
-      console.log('TEEEEEEEEEEST', newAlbum);
-
+    if (!existingAlbum) {
       // If the album doesn't exist, create a new one
-      if (!existingAlbum) {
-        newAlbum = await prisma.album.create({
-          data: {
-            title: metaData.common.album,
-            artistId: newArtist.id,
-            thumbnail: null, // Initialize thumbnail to null
+      newAlbum = await prisma.album.create({
+        data: {
+          title: metaData.common.album,
+          artistId: newArtist.id,
+          thumbnail: null, // Initialize thumbnail to null
+        },
+      });
+
+      // Upload the image of the album and update the thumbnail field
+      const imageUploadPromise = new Promise((resolve, reject) => {
+        const imageCloudinaryUpload = cloudinary.uploader.upload_stream(
+          {folder: 'image'},
+          function (error, result) {
+            if (error) {
+              console.log(error);
+              reject(error);
+            } else {
+              resolve(result.secure_url);
+            }
           },
-        });
+        );
+        streamifier
+          .createReadStream(metaData.common.picture[0].data)
+          .pipe(imageCloudinaryUpload);
+      });
 
-        // Upload the image of the album and update the thumbnail field
-        const imageUploadPromise = new Promise((resolve, reject) => {
-          const imageCloudinaryUpload = cloudinary.uploader.upload_stream(
-            {folder: 'image'},
-            function (error, result) {
-              if (error) {
-                console.log(error);
-                reject(error);
-              } else {
-                resolve(result.secure_url);
-              }
-            },
-          );
-          streamifier
-            .createReadStream(metaData.common.picture[0].data)
-            .pipe(imageCloudinaryUpload);
-        });
+      // Wait for the image upload to complete before continuing
+      thumbnail = await imageUploadPromise;
 
-        // Wait for the image upload to complete before continuing
-        thumbnail = await imageUploadPromise;
-
-        // Update the thumbnail field in the newly created album
-        await prisma.album.update({
-          where: {id: newAlbum.id},
-          data: {thumbnail: thumbnail},
-        });
-      } else {
-        // If the album exists, use its existing thumbnail
-        thumbnail = existingAlbum.thumbnail;
-      }
+      // Update the thumbnail field in the newly created album
+      await prisma.album.update({
+        where: {id: newAlbum.id},
+        data: {thumbnail: thumbnail},
+      });
+    } else {
+      // If the album exists, use its existing thumbnail
+      thumbnail = existingAlbum.thumbnail;
     }
+
     console.log(albumId, newAlbum);
     // Create the audio using Prisma
     const newAudio = await prisma.audio.create({
@@ -286,7 +280,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         albumId: albumId ?? newAlbum?.id,
       },
     });
-
     res.status(200).json({
       audio: newAudio,
       artist: newArtist,

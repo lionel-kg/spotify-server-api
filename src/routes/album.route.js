@@ -154,14 +154,14 @@ router.delete('/:id', async (req, res) => {
         where: {albumId},
       });
 
-      // Delete each audio file
-      await Promise.all(
+      // Use Promise.allSettled to continue even if some deletions fail
+      await Promise.allSettled(
         audioFiles.map(async audio => {
           // Delete cache for the deleted audio file
           await redis.del(`/audio/${audio.id}`);
 
           // Delete audio file from the database
-          await prisma.audio.delete({where: {id: audio.id}});
+          return prisma.audio.delete({where: {id: audio.id}});
         }),
       );
 
