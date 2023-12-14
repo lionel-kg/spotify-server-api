@@ -142,15 +142,31 @@ router.delete('/:id', async (req, res) => {
   const audioId = parseInt(req.params.id);
 
   try {
-    // Delete audio from the database
+    // Récupérer l'id de l'album avant de supprimer l'audio
+    const {albumId} = await prisma.audio.findUnique({
+      where: {id: audioId},
+      select: {albumId: true},
+    });
+
+    // Supprimer l'audio de la base de données
     const deletedAudio = await prisma.audio.delete({
       where: {id: audioId},
     });
 
-    // Delete cache for the deleted audio
+    // Supprimer le cache pour l'audio supprimé
     await redis.del(`/audio/${audioId}`);
 
-    res.status(204).end();
+    // Récupérer l'objet complet de l'album
+    const album = await prisma.album.findUnique({
+      where: {id: albumId},
+      include: {
+        artist: true,
+        audios: true,
+      }, // Ajustez ceci en fonction de votre modèle de données
+    });
+
+    // Retourner l'objet complet de l'album dans la réponse
+    res.status(200).json({album});
   } catch (error) {
     console.error(error);
     res.status(500).json({message: 'Internal server error'});
