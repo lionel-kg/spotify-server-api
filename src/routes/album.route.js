@@ -1,15 +1,15 @@
 import express from 'express';
 const router = express.Router();
-import {prisma} from '../config/db';
+import { prisma } from '../config/db';
 
 import Redis from 'ioredis';
 import redisMiddleware from '../middleware/redis';
-const redis = new Redis({enableAutoPipelining: true});
+const redis = new Redis({ enableAutoPipelining: true });
 
 // Create Album
 router.post('/', async (req, res) => {
   try {
-    const {title, artistId, thumbnail, audio} = req.body;
+    const { title, artistId, thumbnail, audio } = req.body;
     const existingAlbum = await prisma.album.findFirst({
       where: {
         title: title,
@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
       if (audio !== undefined) {
         for (const element of audio) {
           await prisma.audio.update({
-            where: {id: element.id},
+            where: { id: element.id },
             data: {
               albumId: newAlbum.id,
             },
@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -64,7 +64,34 @@ router.get('/', redisMiddleware, async (req, res) => {
     res.status(200).json(albums);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Search Albums
+router.get('/search', async (req, res) => {
+  try {
+
+    const searchQuery = req.query.q || '';
+
+
+    const searchResults = await prisma.album.findMany({
+      where: {
+        title: {
+          contains: searchQuery,
+          mode: 'insensitive', // This will make the search case-insensitive
+        },
+      },
+      include: {
+        artist: true,
+        audios: true,
+      },
+    });
+
+    res.status(200).json(searchResults);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -81,7 +108,7 @@ router.get('/:id', async (req, res) => {
     // } else {
     // If not in cache, fetch from the database
     const album = await prisma.album.findUnique({
-      where: {id: albumId},
+      where: { id: albumId },
       include: {
         artist: true,
         audios: true,
@@ -93,12 +120,12 @@ router.get('/:id', async (req, res) => {
       // await redis.setex(`/album/${albumId}`, 3600, JSON.stringify(album));
       res.status(200).json(album);
     } else {
-      res.status(404).json({message: 'Album not found'});
+      res.status(404).json({ message: 'Album not found' });
     }
     // }
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -108,14 +135,14 @@ router.put('/:id', async (req, res) => {
 
   try {
     const updatedAlbum = await prisma.album.update({
-      where: {id: albumId},
+      where: { id: albumId },
       data: {
         // Update album fields
         title: req.body.title, // Add other fields as needed
 
         // Update audios
         audios: {
-          updateMany: req.body.audios.map(audio => ({
+          updateMany: req.body.audios?.map(audio => ({
             data: {
               title: audio.title, // Add other audio fields as needed
               // ... (other audio fields)
@@ -138,7 +165,7 @@ router.put('/:id', async (req, res) => {
     res.status(200).json(updatedAlbum);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -151,7 +178,7 @@ router.delete('/:id', async (req, res) => {
     await prisma.$transaction(async prisma => {
       // Get all audio files associated with the album
       const audioFiles = await prisma.audio.findMany({
-        where: {albumId},
+        where: { albumId },
       });
 
       // Use Promise.allSettled to continue even if some deletions fail
@@ -161,13 +188,13 @@ router.delete('/:id', async (req, res) => {
           await redis.del(`/audio/${audio.id}`);
 
           // Delete audio file from the database
-          return prisma.audio.delete({where: {id: audio.id}});
+          return prisma.audio.delete({ where: { id: audio.id } });
         }),
       );
 
       // Delete album from the database
       const deletedAlbum = await prisma.album.delete({
-        where: {id: albumId},
+        where: { id: albumId },
       });
 
       // Delete cache for the deleted album
@@ -177,8 +204,9 @@ router.delete('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 export default router;

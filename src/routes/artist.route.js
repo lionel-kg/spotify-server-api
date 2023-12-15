@@ -1,16 +1,16 @@
 import express from 'express';
 const router = express.Router();
 
-import {prisma} from '../config/db';
+import { prisma } from '../config/db';
 
 import Redis from 'ioredis';
 import redisMiddleware from '../middleware/redis';
-const redis = new Redis({enableAutoPipelining: true});
+const redis = new Redis({ enableAutoPipelining: true });
 
 // Create Artist
 router.post('/', async (req, res) => {
   try {
-    const {name} = req.body;
+    const { name } = req.body;
     const existingArtist = await prisma.artist.findFirst({
       where: {
         name: name,
@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -48,7 +48,33 @@ router.get('/', redisMiddleware, async (req, res) => {
     res.status(200).json(artists);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Search Artists route
+router.get('/search', async (req, res) => {
+  try {
+
+    const searchQuery = req.query.q || '';
+
+    const searchResults = await prisma.artist.findMany({
+      where: {
+        name: {
+          contains: searchQuery,
+          mode: 'insensitive', // This will make the search case-insensitive
+        },
+      },
+      include: {
+        albums: true,
+        audios: true,
+      },
+    });
+
+    res.status(200).json(searchResults);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -65,7 +91,7 @@ router.get('/:id', async (req, res) => {
     } else {
       // If not in cache, fetch from the database
       const artist = await prisma.artist.findUnique({
-        where: {id: artistId},
+        where: { id: artistId },
         include: {
           albums: true,
           audios: true,
@@ -77,12 +103,12 @@ router.get('/:id', async (req, res) => {
         await redis.setex(`/artist/${artistId}`, 3600, JSON.stringify(artist));
         res.status(200).json(artist);
       } else {
-        res.status(404).json({message: 'Artist not found'});
+        res.status(404).json({ message: 'Artist not found' });
       }
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -91,7 +117,7 @@ router.put('/:id', async (req, res) => {
   const artistId = parseInt(req.params.id);
   try {
     const updatedArtist = await prisma.artist.update({
-      where: {id: artistId},
+      where: { id: artistId },
       data: req.body,
       include: {
         albums: true,
@@ -109,7 +135,7 @@ router.put('/:id', async (req, res) => {
     res.status(200).json(artists);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -121,15 +147,15 @@ router.delete('/:id', async (req, res) => {
     await prisma.$transaction(async prisma => {
       // Delete artist's albums
       const deletedAlbums = await prisma.album.deleteMany({
-        where: {artistId},
+        where: { artistId },
       });
       // Delete artist's audio files
       const deletedAudioFiles = await prisma.audio.deleteMany({
-        where: {artistId},
+        where: { artistId },
       });
       // Delete the artist
       const deletedArtist = await prisma.artist.delete({
-        where: {id: artistId},
+        where: { id: artistId },
       });
       const artists = await prisma.artist.findMany({
         include: {
@@ -143,7 +169,7 @@ router.delete('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
