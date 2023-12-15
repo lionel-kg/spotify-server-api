@@ -52,7 +52,7 @@ router.get('/', redisMiddleware, async (req, res) => {
   }
 });
 
-// Search Artists route
+//Search Artist
 router.get('/search', async (req, res) => {
   try {
 

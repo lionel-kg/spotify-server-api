@@ -139,7 +139,7 @@ router.put('/:id', async (req, res) => {
       data: {
         // Update album fields
         title: req.body.title, // Add other fields as needed
-
+        thumbnail: req.body.thumbnail,
         // Update audios
         audios: {
           updateMany: req.body.audios?.map(audio => ({

@@ -1,19 +1,19 @@
 import express from 'express';
 const router = express.Router();
-import {prisma} from '../config/db';
-import {upload} from '../services/upload.service';
-import {getWavMetadata, convertMp4ToWav} from '../services/audio.service';
+import { prisma } from '../config/db';
+import { upload } from '../services/upload.service';
+import { getWavMetadata, convertMp4ToWav } from '../services/audio.service';
 import cloudinary from '../config/cloudinary';
 import streamifier from 'streamifier';
 
 import Redis from 'ioredis';
 import redisMiddleware from '../middleware/redis';
-const redis = new Redis({enableAutoPipelining: true});
+const redis = new Redis({ enableAutoPipelining: true });
 
 // Create Audio
 router.post('/', async (req, res) => {
   try {
-    const audio = await prisma.audio.create({data: req.body});
+    const audio = await prisma.audio.create({ data: req.body });
     await redis.del(`/audio`);
     await redis.del(`/album/${req.body.albumId}`);
     await redis.del(`/artist/${req.body.artistId}`);
@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(audio);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -53,10 +53,10 @@ router.get('/pagination', redisMiddleware, async (req, res) => {
     const cacheKey = `${req.originalUrl}_page_${page}_limit_${limit}`;
     await redis.setex(cacheKey, 3600, JSON.stringify(audios));
 
-    res.status(200).json({audios, nbResults});
+    res.status(200).json({ audios, nbResults });
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -75,7 +75,34 @@ router.get('/', redisMiddleware, async (req, res) => {
     res.status(200).json(audios);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+//Search Audio
+router.get('/search', async (req, res) => {
+  try {
+
+    const searchQuery = req.query.q || '';
+
+
+    const searchResults = await prisma.audio.findMany({
+      where: {
+        title: {
+          contains: searchQuery,
+          mode: 'insensitive', // This will make the search case-insensitive
+        },
+      },
+      include: {
+        artist: true,
+        album: true,
+      },
+    });
+
+    res.status(200).json(searchResults);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -92,7 +119,7 @@ router.get('/:id', async (req, res) => {
     } else {
       // If not in cache, fetch from the database
       const audio = await prisma.audio.findUnique({
-        where: {id: audioId},
+        where: { id: audioId },
         include: {
           album: true,
           artist: true,
@@ -104,12 +131,12 @@ router.get('/:id', async (req, res) => {
         await redis.setex(`/audio/${audioId}`, 3600, JSON.stringify(audio));
         res.status(200).json(audio);
       } else {
-        res.status(404).json({message: 'Audio not found'});
+        res.status(404).json({ message: 'Audio not found' });
       }
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -119,7 +146,7 @@ router.put('/:id', async (req, res) => {
 
   try {
     const updatedAudio = await prisma.audio.update({
-      where: {id: audioId},
+      where: { id: audioId },
       data: req.body,
       include: {
         album: true,
@@ -133,7 +160,7 @@ router.put('/:id', async (req, res) => {
     res.status(200).json(updatedAudio);
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -143,14 +170,14 @@ router.delete('/:id', async (req, res) => {
 
   try {
     // Récupérer l'id de l'album avant de supprimer l'audio
-    const {albumId} = await prisma.audio.findUnique({
-      where: {id: audioId},
-      select: {albumId: true},
+    const { albumId } = await prisma.audio.findUnique({
+      where: { id: audioId },
+      select: { albumId: true },
     });
 
     // Supprimer l'audio de la base de données
     const deletedAudio = await prisma.audio.delete({
-      where: {id: audioId},
+      where: { id: audioId },
     });
 
     // Supprimer le cache pour l'audio supprimé
@@ -158,7 +185,7 @@ router.delete('/:id', async (req, res) => {
 
     // Récupérer l'objet complet de l'album
     const album = await prisma.album.findUnique({
-      where: {id: albumId},
+      where: { id: albumId },
       include: {
         artist: true,
         audios: true,
@@ -166,10 +193,10 @@ router.delete('/:id', async (req, res) => {
     });
 
     // Retourner l'objet complet de l'album dans la réponse
-    res.status(200).json({album});
+    res.status(200).json({ album });
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -204,7 +231,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     // Check if the artist already exists
     const existingArtist = await prisma.artist.findFirst({
-      where: {name: metaData.common.artist},
+      where: { name: metaData.common.artist },
     });
 
     // If the artist doesn't exist, create a new one
@@ -242,7 +269,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       // Upload the image of the album and update the thumbnail field
       const imageUploadPromise = new Promise((resolve, reject) => {
         const imageCloudinaryUpload = cloudinary.uploader.upload_stream(
-          {folder: 'image'},
+          { folder: 'image' },
           function (error, result) {
             if (error) {
               console.log(error);
@@ -262,8 +289,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
       // Update the thumbnail field in the newly created album
       await prisma.album.update({
-        where: {id: newAlbum.id},
-        data: {thumbnail: thumbnail},
+        where: { id: newAlbum.id },
+        data: { thumbnail: thumbnail },
       });
     } else {
       // If the album exists, use its existing thumbnail
@@ -291,7 +318,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     console.error(error);
     res
       .status(500)
-      .json({error: 'Erreur lors du téléchargement du fichier audio'});
+      .json({ error: 'Erreur lors du téléchargement du fichier audio' });
   }
 });
 
