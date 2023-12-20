@@ -308,6 +308,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     console.log(albumId, newAlbum);
+    console.log('durationnnn', metaData);
     // Create the audio using Prisma
     const newAudio = await prisma.audio.create({
       data: {
@@ -315,6 +316,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         url: audioCloudinaryUpload.url,
         artistId: newArtist.id,
         albumId: albumId ?? newAlbum?.id,
+        duration: metaData.format.duration,
       },
     });
     res.status(200).json({

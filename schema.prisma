@@ -29,6 +29,7 @@ model Audio {
   album   Album?  @relation(fields: [albumId], references: [id])
   artist  Artist? @relation(fields: [artistId], references: [id])
   url   String
+  duration Float @default(0)
   albumId Int?
   artistId Int?
 }
