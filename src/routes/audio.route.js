@@ -6,6 +6,7 @@ import {
   getWavMetadata,
   convertMp4ToWav,
   processAudioFilesInDirectory,
+  getMetadata,
 } from '../services/audio.service';
 import cloudinary from '../config/cloudinary';
 import streamifier from 'streamifier';
@@ -216,13 +217,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const audioFile = req.file;
     const albumId = req.body.albumId ? parseInt(req.body.albumId) : null;
     let thumbnail = null;
-    let metaData = null;
 
     // if (
     //   audioFile.mimetype === 'audio/mpeg' ||
     //   audioFile.mimetype === 'video/mp4'
     // ) {
-    const file = await convertMp4ToWav(audioFile.path);
+    const metaData = await getMetadata(audioFile.path);
     // const metadataPromise = getWavMetadata(file);
     // metaData = await metadataPromise;
     // } else {

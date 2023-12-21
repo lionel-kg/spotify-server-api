@@ -55,7 +55,7 @@ async function processAudioFile(filePath, cloudinary) {
 
     // Check if the artist already exists
     const existingArtist = await prisma.artist.findFirst({
-      where: {name: metaData.artist},
+      where: {name: metaData.common.artist},
     });
 
     // If the artist doesn't exist, create a new one
@@ -63,7 +63,7 @@ async function processAudioFile(filePath, cloudinary) {
       existingArtist ||
       (await prisma.artist.create({
         data: {
-          name: metaData.artist,
+          name: metaData.common.artist,
         },
       }));
 
@@ -75,7 +75,7 @@ async function processAudioFile(filePath, cloudinary) {
     // Check if the album already exists for the artist
     let where = {
       artistId: newArtist.id,
-      title: metaData.album,
+      title: metaData.common.album,
     };
 
     const existingAlbum = await prisma.album.findFirst({
@@ -88,7 +88,7 @@ async function processAudioFile(filePath, cloudinary) {
       // If the album doesn't exist, create a new one
       newAlbum = await prisma.album.create({
         data: {
-          title: metaData.album,
+          title: metaData.common.album,
           artistId: newArtist.id,
           thumbnail: null, // Initialize thumbnail to null
         },
@@ -109,7 +109,7 @@ async function processAudioFile(filePath, cloudinary) {
           },
         );
         streamifier
-          .createReadStream(metaData.picture[0].data)
+          .createReadStream(metaData.common.picture[0].data)
           .pipe(imageCloudinaryUpload);
       });
 
@@ -129,10 +129,11 @@ async function processAudioFile(filePath, cloudinary) {
     // Create the audio using Prisma
     const newAudio = await prisma.audio.create({
       data: {
-        title: metaData.title,
+        title: metaData.common.title,
         url: audioCloudinaryUpload.url,
         artistId: newArtist.id,
         albumId: newAlbum?.id,
+        duration: metaData.format.duration,
       },
     });
 
@@ -145,14 +146,14 @@ async function processAudioFile(filePath, cloudinary) {
   }
 }
 
-async function getMetadata(filePath) {
+export async function getMetadata(filePath) {
   // Implémentez la logique pour récupérer les métadonnées du fichier audio
   // Utilisez une bibliothèque comme 'music-metadata' ou autre
 
   // Exemple avec music-metadata (il faut l'installer avec npm install music-metadata)
   const mm = require('music-metadata');
   const metadata = await mm.parseFile(filePath);
-  return metadata.common;
+  return metadata;
 }
 
 export async function processAudioFilesInDirectory(cloudinary) {
