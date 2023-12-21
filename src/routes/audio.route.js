@@ -218,17 +218,17 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     let thumbnail = null;
     let metaData = null;
 
-    if (
-      audioFile.mimetype === 'audio/mpeg' ||
-      audioFile.mimetype === 'video/mp4'
-    ) {
-      const file = await convertMp4ToWav(audioFile.path);
-      const metadataPromise = getWavMetadata(file);
-      metaData = await metadataPromise;
-    } else {
-      const metadataPromise = getWavMetadata(audioFile.path);
-      metaData = await metadataPromise;
-    }
+    // if (
+    //   audioFile.mimetype === 'audio/mpeg' ||
+    //   audioFile.mimetype === 'video/mp4'
+    // ) {
+    const file = await convertMp4ToWav(audioFile.path);
+    // const metadataPromise = getWavMetadata(file);
+    // metaData = await metadataPromise;
+    // } else {
+    //   const metadataPromise = getWavMetadata(audioFile.path);
+    //   metaData = await metadataPromise;
+    // }
 
     // Upload the audio file to Cloudinary
     const audioCloudinaryUpload = await cloudinary.uploader.upload(
