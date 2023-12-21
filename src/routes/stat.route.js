@@ -10,6 +10,7 @@ router.get('/', async (req, res) => {
   try {
     const numberOfSongs = await prisma.audio.count();
     const numberOfAlbums = await prisma.album.count();
+    const numberOfArtists = await prisma.artist.count();
     // Ajoutez ici la logique pour obtenir le nombre d'écoutes
 
     // Vous pouvez également ajouter d'autres statistiques selon vos besoins
@@ -17,6 +18,7 @@ router.get('/', async (req, res) => {
     res.status(200).json({
       numberOfSongs: {label: 'nombre de morceaux', count: numberOfSongs},
       numberOfAlbums: {label: "nombre d'albums", count: numberOfAlbums},
+      numberOfArtists: {label: "nombre d'artists", count: numberOfArtists},
       // Ajoutez ici le nombre d'écoutes
     });
   } catch (error) {

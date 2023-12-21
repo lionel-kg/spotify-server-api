@@ -208,5 +208,39 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.get('/pagination', redisMiddleware, async (req, res) => {
+  try {
+    // Paramètres de pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10; // Nombre d'albums par page
+
+    // Calcul de l'offset pour la requête
+    const offset = (page - 1) * limit;
+
+    // Requête pour récupérer les albums paginés
+    const albums = await prisma.album.findMany({
+      include: {
+        artist: true,
+        audios: true,
+      },
+      skip: offset,
+      take: limit,
+    });
+
+    // Requête pour récupérer le nombre total d'albums sans la pagination
+    const nbResults = await prisma.album.count();
+
+    // Enregistrez les données dans le cache Redis avec une clé unique basée sur les paramètres de pagination
+    // const cacheKey = `${req.originalUrl}_page_${page}_limit_${limit}`;
+    // await redis.setex(cacheKey, 3600, JSON.stringify(albums));
+
+    res.status(200).json({ albums, nbResults });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 
 export default router;
