@@ -156,6 +156,12 @@ export async function getMetadata(filePath) {
   return metadata;
 }
 
+export async function getWavMetadata(filePath) {
+  const mm = require('music-metadata');
+  const metadata = await mm.parseFile(filePath);
+  return metadata;
+}
+
 export async function processAudioFilesInDirectory(cloudinary) {
   try {
     const directoryPath = path.join(__dirname, '../../songs');

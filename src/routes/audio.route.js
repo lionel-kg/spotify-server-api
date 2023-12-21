@@ -3,6 +3,7 @@ const router = express.Router();
 import {prisma} from '../config/db';
 import {upload} from '../services/upload.service';
 import {
+  getWavMetadata,
   processAudioFilesInDirectory,
   getMetadata,
 } from '../services/audio.service';
